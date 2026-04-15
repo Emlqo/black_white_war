@@ -1,348 +1,340 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { RotateCcw, Star } from 'lucide-react';
-
-const App = () => {
-  const [scores, setScores] = useState({ black: 0, white: 0 });
-  // 직접 입력 칸을 위한 상태
-  const [customInput, setCustomInput] = useState({ black: '', white: '' });
-  const [lastScorer, setLastScorer] = useState(null);
-  
-  const canvasRef = useRef(null);
-  const particlesRef = useRef([]);
-  const animationRef = useRef(null);
-
-  // 동양풍 금빛가루 & 먹물 파티클 효과
-  const createParticles = useCallback((team) => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    
-    const originX = team === 'black' ? canvas.width * 0.25 : canvas.width * 0.75;
-    const originY = canvas.height * 0.6;
-    
-    // 흑팀은 금색+먹물색, 백팀은 금색+순백색
-    const colors = team === 'black' 
-      ? ['#D4AF37', '#AA8000', '#222222', '#000000']
-      : ['#D4AF37', '#AA8000', '#FFFFFF', '#F0F0F0'];
-
-    for (let i = 0; i < 40; i++) {
-      particlesRef.current.push({
-        x: originX + (Math.random() - 0.5) * 100,
-        y: originY + (Math.random() - 0.5) * 50,
-        vx: (Math.random() - 0.5) * 4,
-        vy: (Math.random() * -6) - 2, // 위로 은은하게 흩날림
-        radius: Math.random() * 3 + 1,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        life: 1,
-        decay: Math.random() * 0.015 + 0.005
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      particlesRef.current.forEach((p, index) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vx *= 0.98; // 공기 저항 (서서히 멈춤)
-        p.vy *= 0.98;
-        p.life -= p.decay;
-
-        if (p.life <= 0) {
-          particlesRef.current.splice(index, 1);
-        } else {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fillStyle = p.color;
-          ctx.globalAlpha = p.life * 0.8;
-          ctx.fill();
-          ctx.globalAlpha = 1;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>풍양중 흑백교사전</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 동양풍 폰트 스택 적용 */
+        body {
+            font-family: "Batang", "Gungsuh", "Noto Serif KR", serif;
+            margin: 0;
+            overflow: hidden; /* 스크롤 방지 */
+            user-select: none; /* 텍스트 선택 방지 */
         }
-      });
-
-      animationRef.current = requestAnimationFrame(animate);
-    };
-    
-    animate();
-
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      cancelAnimationFrame(animationRef.current);
-    };
-  }, []);
-
-  const handleScore = (team, amount) => {
-    setScores(prev => {
-      const newScore = Math.max(0, prev[team] + amount);
-      if (amount > 0) {
-        createParticles(team);
-        setLastScorer(team);
-        setTimeout(() => setLastScorer(null), 500);
-      }
-      return { ...prev, [team]: newScore };
-    });
-  };
-
-  // 사용자가 직접 입력한 점수를 더하거나 빼는 함수
-  const applyCustomScore = (team, isAdd) => {
-    const val = parseInt(customInput[team], 10);
-    if (!isNaN(val) && val > 0) {
-      handleScore(team, isAdd ? val : -val);
-      setCustomInput(prev => ({ ...prev, [team]: '' })); // 적용 후 칸 비우기
-    }
-  };
-
-  const handleCustomInputEnter = (e, team) => {
-    if (e.key === 'Enter') {
-      applyCustomScore(team, true); // 엔터 치면 기본적으로 더하기
-    }
-  };
-
-  const resetScores = () => {
-    if(window.confirm('모든 기록을 초기화하시겠습니까?')) {
-      setScores({ black: 0, white: 0 });
-      setCustomInput({ black: '', white: '' });
-      particlesRef.current = [];
-    }
-  };
-
-  const totalScore = scores.black + scores.white;
-  const blackPercentage = totalScore === 0 ? 50 : (scores.black / totalScore) * 100;
-
-  // 동양풍 폰트 스택
-  const orientalFont = { fontFamily: '"Batang", "Gungsuh", "Noto Serif KR", serif' };
-
-  return (
-    <div className="relative w-full h-screen overflow-hidden select-none flex" style={orientalFont}>
-      {/* 백그라운드 파티클용 캔버스 */}
-      <canvas 
-        ref={canvasRef} 
-        className="absolute inset-0 pointer-events-none z-20"
-      />
-
-      {/* 중앙 상단 타이틀 영역 (가독성 대폭 강화) */}
-      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center w-full">
-        <h1 
-          className="text-4xl md:text-6xl text-[#D4AF37] tracking-[0.2em] font-bold"
-          style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.9), 0px 0px 4px rgba(255,255,255,0.4)' }}
-        >
-          풍양중 흑백교사전
-        </h1>
-        <div className="mt-4 flex items-center gap-6">
-          <div className="w-20 h-[2px] bg-gradient-to-r from-transparent to-[#D4AF37]"></div>
-          <div className="text-2xl md:text-3xl text-[#D4AF37] tracking-[0.5em] font-medium drop-shadow-lg">
-            黑白敎師戰
-          </div>
-          <div className="w-20 h-[2px] bg-gradient-to-l from-transparent to-[#D4AF37]"></div>
-        </div>
-
-        {/* 현재 우세 팀 중앙 강조 표시 */}
-        <div className="mt-6 px-8 py-2 bg-black/40 backdrop-blur-md rounded-full border border-[#D4AF37]/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]">
-          <span className="text-xl md:text-2xl font-bold tracking-widest text-white drop-shadow-md">
-            {scores.black > scores.white ? (
-              <>
-                <span className="text-neutral-300">현재 상황: </span>
-                <span className="text-[#D4AF37]">흑팀 우세 (黑 優勢)</span>
-              </>
-            ) : scores.white > scores.black ? (
-              <>
-                <span className="text-neutral-300">현재 상황: </span>
-                <span className="text-[#D4AF37]">백팀 우세 (白 優勢)</span>
-              </>
-            ) : (
-              <>
-                <span className="text-neutral-300">현재 상황: </span>
-                <span className="text-[#D4AF37]">무승부 (無勝負)</span>
-              </>
-            )}
-          </span>
-        </div>
-      </div>
-
-      {/* 흑팀 영역 (수묵/Onyx Black) */}
-      <div className="w-1/2 h-full bg-[#111111] flex flex-col items-center justify-center relative transition-all duration-700 overflow-hidden">
-        {/* 거대한 배경 한자 */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 opacity-10">
-          <span className="text-[40vw] text-white leading-none">黑</span>
-        </div>
         
-        <div className="z-10 flex flex-col items-center w-full max-w-sm px-8 mt-10">
-          <div className="text-2xl tracking-[0.5em] mb-4 text-[#D4AF37] font-bold">
-            흑 팀
-          </div>
-          
-          {/* 점수 표시 */}
-          <div className={`text-[8rem] md:text-[12rem] font-bold leading-none transition-all duration-500 mb-8 ${lastScorer === 'black' ? 'text-[#D4AF37] scale-105' : 'text-neutral-200'}`}>
-            {scores.black}
-          </div>
+        /* 커스텀 스크롤바 숨기기 (숫자 입력창) */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            font-family: sans-serif; /* 입력창은 가독성을 위해 고딕 유지 */
+        }
 
-          {/* 직접 입력 및 컨트롤 패널 */}
-          <div className="w-full bg-black/60 p-6 border border-neutral-800 rounded-lg backdrop-blur-sm">
-            {/* 빠른 추가 버튼 */}
-            <div className="flex gap-2 w-full mb-6">
-              <PremiumButton onClick={() => handleScore('black', 1)} label="1점" theme="dark" />
-              <PremiumButton onClick={() => handleScore('black', 5)} label="5점" theme="dark" />
-              <PremiumButton onClick={() => handleScore('black', 10)} label="10점" theme="dark" />
-            </div>
+        /* 텍스트 그림자 효과 (인라인 스타일 대신 클래스로 정의) */
+        .title-shadow {
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 0px 0px 4px rgba(255,255,255,0.4);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
 
-            {/* 직접 입력 영역 */}
-            <div className="flex flex-col gap-3 w-full">
-              <div className="flex items-center gap-2 border-b-2 border-neutral-700 pb-2">
-                <span className="text-neutral-500 whitespace-nowrap text-sm">직접입력</span>
-                <input 
-                  type="number"
-                  min="1"
-                  value={customInput.black}
-                  onChange={(e) => setCustomInput(prev => ({...prev, black: e.target.value}))}
-                  onKeyDown={(e) => handleCustomInputEnter(e, 'black')}
-                  placeholder="점수"
-                  className="w-full bg-transparent text-2xl text-center text-[#D4AF37] outline-none placeholder-neutral-800 font-sans"
-                />
-              </div>
-              <div className="flex gap-2 w-full">
-                <button 
-                  onClick={() => applyCustomScore('black', true)} 
-                  className="flex-1 py-3 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/50 hover:bg-[#D4AF37]/40 transition-colors rounded text-lg tracking-widest"
-                >
-                  더하기
-                </button>
-                <button 
-                  onClick={() => applyCustomScore('black', false)} 
-                  className="flex-1 py-3 text-neutral-400 border border-neutral-700 hover:border-neutral-500 hover:text-neutral-200 transition-colors rounded text-lg tracking-widest"
-                >
-                  빼기
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 백팀 영역 (한지/Pearl White) */}
-      <div className="w-1/2 h-full bg-[#F5F5F0] flex flex-col items-center justify-center relative transition-all duration-700 border-l-2 border-neutral-300 shadow-[-20px_0_40px_rgba(0,0,0,0.1)] overflow-hidden">
-        {/* 거대한 배경 한자 */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 opacity-5">
-          <span className="text-[40vw] text-black leading-none">白</span>
-        </div>
+    <div class="relative w-full h-screen overflow-hidden flex">
         
-        <div className="z-10 flex flex-col items-center w-full max-w-sm px-8 mt-10">
-          <div className="text-2xl tracking-[0.5em] mb-4 text-[#AA8000] font-bold">
-            백 팀
-          </div>
-          
-          {/* 점수 표시 */}
-          <div className={`text-[8rem] md:text-[12rem] font-bold leading-none transition-all duration-500 mb-8 ${lastScorer === 'white' ? 'text-[#D4AF37] scale-105' : 'text-neutral-800'}`}>
-            {scores.white}
-          </div>
+        <!-- 백그라운드 파티클용 캔버스 -->
+        <canvas id="particleCanvas" class="absolute inset-0 pointer-events-none z-20"></canvas>
 
-          {/* 직접 입력 및 컨트롤 패널 */}
-          <div className="w-full bg-white/60 p-6 border border-neutral-300 rounded-lg backdrop-blur-sm">
-            {/* 빠른 추가 버튼 */}
-            <div className="flex gap-2 w-full mb-6">
-              <PremiumButton onClick={() => handleScore('white', 1)} label="1점" theme="light" />
-              <PremiumButton onClick={() => handleScore('white', 5)} label="5점" theme="light" />
-              <PremiumButton onClick={() => handleScore('white', 10)} label="10점" theme="light" />
+        <!-- 중앙 상단 타이틀 영역 (가독성 대폭 강화) -->
+        <div class="absolute top-6 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center w-full">
+            <h1 class="text-4xl md:text-6xl text-[#D4AF37] tracking-[0.2em] font-bold title-shadow">
+                풍양중 흑백교사전
+            </h1>
+            <div class="mt-4 flex items-center gap-6">
+                <div class="w-20 h-[2px] bg-gradient-to-r from-transparent to-[#D4AF37]"></div>
+                <div class="text-2xl md:text-3xl text-[#D4AF37] tracking-[0.5em] font-medium drop-shadow-lg">
+                    黑白敎師戰
+                </div>
+                <div class="w-20 h-[2px] bg-gradient-to-l from-transparent to-[#D4AF37]"></div>
             </div>
 
-            {/* 직접 입력 영역 */}
-            <div className="flex flex-col gap-3 w-full">
-              <div className="flex items-center gap-2 border-b-2 border-neutral-300 pb-2">
-                <span className="text-neutral-400 whitespace-nowrap text-sm">직접입력</span>
-                <input 
-                  type="number"
-                  min="1"
-                  value={customInput.white}
-                  onChange={(e) => setCustomInput(prev => ({...prev, white: e.target.value}))}
-                  onKeyDown={(e) => handleCustomInputEnter(e, 'white')}
-                  placeholder="점수"
-                  className="w-full bg-transparent text-2xl text-center text-[#AA8000] outline-none placeholder-neutral-200 font-sans"
-                />
-              </div>
-              <div className="flex gap-2 w-full">
-                <button 
-                  onClick={() => applyCustomScore('white', true)} 
-                  className="flex-1 py-3 bg-[#AA8000]/10 text-[#AA8000] border border-[#AA8000]/40 hover:bg-[#AA8000]/20 transition-colors rounded text-lg tracking-widest"
-                >
-                  더하기
+            <!-- 현재 우세 팀 중앙 강조 표시 -->
+            <div class="mt-6 px-8 py-2 bg-black/40 backdrop-blur-md rounded-full border border-[#D4AF37]/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                <span class="text-xl md:text-2xl font-bold tracking-widest text-white drop-shadow-md" id="statusText">
+                    <span class="text-neutral-300">현재 상황: </span>
+                    <span class="text-[#D4AF37]">무승부 (無勝負)</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- ==================== 흑팀 영역 (수묵/Onyx Black) ==================== -->
+        <div class="w-1/2 h-full bg-[#111111] flex flex-col items-center justify-center relative transition-all duration-700 overflow-hidden">
+            <!-- 거대한 배경 한자 -->
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 opacity-10">
+                <span class="text-[40vw] text-white leading-none">黑</span>
+            </div>
+            
+            <div class="z-10 flex flex-col items-center w-full max-w-sm px-8 mt-10">
+                <div class="text-2xl tracking-[0.5em] mb-4 text-[#D4AF37] font-bold">
+                    흑 팀
+                </div>
+                
+                <!-- 점수 표시 -->
+                <div id="blackScoreDisplay" class="text-[8rem] md:text-[12rem] font-bold leading-none transition-all duration-500 mb-8 text-neutral-200">
+                    0
+                </div>
+
+                <!-- 직접 입력 및 컨트롤 패널 -->
+                <div class="w-full bg-black/60 p-6 border border-neutral-800 rounded-lg backdrop-blur-sm">
+                    <!-- 빠른 추가 버튼 -->
+                    <div class="flex gap-2 w-full mb-6">
+                        <button onclick="handleScore('black', 1)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">1점</button>
+                        <button onclick="handleScore('black', 5)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">5점</button>
+                        <button onclick="handleScore('black', 10)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">10점</button>
+                    </div>
+
+                    <!-- 직접 입력 영역 -->
+                    <div class="flex flex-col gap-3 w-full">
+                        <div class="flex items-center gap-2 border-b-2 border-neutral-700 pb-2">
+                            <span class="text-neutral-500 whitespace-nowrap text-sm">직접입력</span>
+                            <input type="number" min="1" id="blackCustomInput" placeholder="점수" class="w-full bg-transparent text-2xl text-center text-[#D4AF37] outline-none placeholder-neutral-800 font-sans" onkeydown="handleCustomInputEnter(event, 'black')">
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <button onclick="applyCustomScore('black', true)" class="flex-1 py-3 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/50 hover:bg-[#D4AF37]/40 transition-colors rounded text-lg tracking-widest">더하기</button>
+                            <button onclick="applyCustomScore('black', false)" class="flex-1 py-3 text-neutral-400 border border-neutral-700 hover:border-neutral-500 hover:text-neutral-200 transition-colors rounded text-lg tracking-widest">빼기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 백팀 영역 (한지/Pearl White) ==================== -->
+        <div class="w-1/2 h-full bg-[#F5F5F0] flex flex-col items-center justify-center relative transition-all duration-700 border-l-2 border-neutral-300 shadow-[-20px_0_40px_rgba(0,0,0,0.1)] overflow-hidden">
+            <!-- 거대한 배경 한자 -->
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 opacity-5">
+                <span class="text-[40vw] text-black leading-none">白</span>
+            </div>
+            
+            <div class="z-10 flex flex-col items-center w-full max-w-sm px-8 mt-10">
+                <div class="text-2xl tracking-[0.5em] mb-4 text-[#AA8000] font-bold">
+                    백 팀
+                </div>
+                
+                <!-- 점수 표시 -->
+                <div id="whiteScoreDisplay" class="text-[8rem] md:text-[12rem] font-bold leading-none transition-all duration-500 mb-8 text-neutral-800">
+                    0
+                </div>
+
+                <!-- 직접 입력 및 컨트롤 패널 -->
+                <div class="w-full bg-white/60 p-6 border border-neutral-300 rounded-lg backdrop-blur-sm">
+                    <!-- 빠른 추가 버튼 -->
+                    <div class="flex gap-2 w-full mb-6">
+                        <button onclick="handleScore('white', 1)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">1점</button>
+                        <button onclick="handleScore('white', 5)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">5점</button>
+                        <button onclick="handleScore('white', 10)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">10점</button>
+                    </div>
+
+                    <!-- 직접 입력 영역 -->
+                    <div class="flex flex-col gap-3 w-full">
+                        <div class="flex items-center gap-2 border-b-2 border-neutral-300 pb-2">
+                            <span class="text-neutral-400 whitespace-nowrap text-sm">직접입력</span>
+                            <input type="number" min="1" id="whiteCustomInput" placeholder="점수" class="w-full bg-transparent text-2xl text-center text-[#AA8000] outline-none placeholder-neutral-200 font-sans" onkeydown="handleCustomInputEnter(event, 'white')">
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <button onclick="applyCustomScore('white', true)" class="flex-1 py-3 bg-[#AA8000]/10 text-[#AA8000] border border-[#AA8000]/40 hover:bg-[#AA8000]/20 transition-colors rounded text-lg tracking-widest">더하기</button>
+                            <button onclick="applyCustomScore('white', false)" class="flex-1 py-3 text-neutral-500 border border-neutral-300 hover:border-neutral-400 hover:text-neutral-700 transition-colors rounded text-lg tracking-widest">빼기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 하단 동양풍 상태바 및 줄다리기 게이지 ==================== -->
+        <div class="absolute bottom-0 left-0 w-full z-30 flex flex-col items-center">
+            
+            <!-- 리셋 버튼 (게이지 바 위쪽으로 이동) -->
+            <div class="w-full flex justify-end px-8 pb-4">
+                <button onclick="resetScores()" class="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-sm rounded-lg border border-neutral-700 text-neutral-400 hover:text-[#D4AF37] hover:border-[#D4AF37] transition-all text-sm tracking-widest">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    기록 초기화
                 </button>
-                <button 
-                  onClick={() => applyCustomScore('white', false)} 
-                  className="flex-1 py-3 text-neutral-500 border border-neutral-300 hover:border-neutral-400 hover:text-neutral-700 transition-colors rounded text-lg tracking-widest"
-                >
-                  빼기
-                </button>
-              </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* 하단 동양풍 상태바 및 줄다리기 게이지 (위치 조정) */}
-      <div className="absolute bottom-0 left-0 w-full z-30 flex flex-col items-center">
-        
-        {/* 리셋 버튼 (게이지 바 위쪽으로 이동) */}
-        <div className="w-full flex justify-end px-8 pb-4">
-          <button 
-            onClick={resetScores}
-            className="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-sm rounded-lg border border-neutral-700 text-neutral-400 hover:text-[#D4AF37] hover:border-[#D4AF37] transition-all text-sm tracking-widest"
-          >
-            <RotateCcw size={16} strokeWidth={2} />
-            기록 초기화
-          </button>
-        </div>
-
-        {/* 줄다리기 게이지 (화면 최하단에 꽉 차게 배치) */}
-        <div className="relative w-full h-4 flex opacity-100 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] border-t-2 border-b-2 border-[#D4AF37]/80 bg-neutral-400">
-          <div 
-            className="h-full bg-neutral-800 transition-all duration-700 ease-in-out"
-            style={{ width: `${blackPercentage}%` }}
-          />
-          <div 
-            className="h-full bg-[#FAFAFA] transition-all duration-700 ease-in-out"
-            style={{ width: `${100 - blackPercentage}%` }}
-          />
-          {/* 좌우로 움직이는 빛나는 별 */}
-          <div 
-            className="absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-in-out z-10"
-            style={{ left: `${blackPercentage}%` }}
-          >
-            <div className="bg-black p-1.5 rounded-full border-2 border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,1)]">
-              <Star className="text-[#D4AF37] fill-[#D4AF37] w-6 h-6 md:w-8 md:h-8" />
+            <!-- 줄다리기 게이지 (화면 최하단에 꽉 차게 배치) -->
+            <div class="relative w-full h-4 flex opacity-100 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] border-t-2 border-b-2 border-[#D4AF37]/80 bg-neutral-400">
+                <div id="blackGauge" class="h-full bg-neutral-800 transition-all duration-700 ease-in-out" style="width: 50%;"></div>
+                <div id="whiteGauge" class="h-full bg-[#FAFAFA] transition-all duration-700 ease-in-out" style="width: 50%;"></div>
+                
+                <!-- 좌우로 움직이는 빛나는 별 -->
+                <div id="starIndicator" class="absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-in-out z-10" style="left: 50%;">
+                    <div class="bg-black p-1.5 rounded-full border-2 border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,1)]">
+                        <!-- Lucide 별 아이콘은 fill 처리가 복잡하므로 SVG 직접 삽입 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
 
-      </div>
     </div>
-  );
-};
 
-// 동양풍 버튼 컴포넌트
-const PremiumButton = ({ onClick, label, theme }) => {
-  const isDark = theme === 'dark';
-  
-  const baseStyle = "flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest";
-  
-  const themeStyle = isDark
-    ? "text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]"
-    : "text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]";
+    <!-- 스크립트 로직 (기존 React 로직을 Vanilla JS로 완벽히 포팅) -->
+    <script>
+        // Lucide 아이콘 초기화
+        lucide.createIcons();
 
-  return (
-    <button onClick={onClick} className={`${baseStyle} ${themeStyle}`}>
-      {label}
-    </button>
-  );
-};
+        // 상태 변수
+        let scores = { black: 0, white: 0 };
+        let particles = [];
+        let animationFrameId;
 
-export default App;
+        // DOM 요소 참조
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        const blackScoreDisplay = document.getElementById('blackScoreDisplay');
+        const whiteScoreDisplay = document.getElementById('whiteScoreDisplay');
+        const blackCustomInput = document.getElementById('blackCustomInput');
+        const whiteCustomInput = document.getElementById('whiteCustomInput');
+        const statusText = document.getElementById('statusText');
+        const blackGauge = document.getElementById('blackGauge');
+        const whiteGauge = document.getElementById('whiteGauge');
+        const starIndicator = document.getElementById('starIndicator');
+
+        // 캔버스 리사이징
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // 초기 호출
+
+        // 동양풍 금빛가루 & 먹물 파티클 생성 함수
+        function createParticles(team) {
+            const originX = team === 'black' ? canvas.width * 0.25 : canvas.width * 0.75;
+            const originY = canvas.height * 0.6;
+            
+            const colors = team === 'black' 
+                ? ['#D4AF37', '#AA8000', '#222222', '#000000']
+                : ['#D4AF37', '#AA8000', '#FFFFFF', '#F0F0F0'];
+
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: originX + (Math.random() - 0.5) * 100,
+                    y: originY + (Math.random() - 0.5) * 50,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() * -6) - 2,
+                    radius: Math.random() * 3 + 1,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1,
+                    decay: Math.random() * 0.015 + 0.005
+                });
+            }
+        }
+
+        // 파티클 애니메이션 루프
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.98; // 공기 저항
+                p.vy *= 0.98;
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life * 0.8;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+            animationFrameId = requestAnimationFrame(animate);
+        }
+        animate(); // 애니메이션 시작
+
+        // 화면 UI 업데이트 함수 (React의 렌더링 역할)
+        function updateUI(lastScorerTeam = null) {
+            // 점수 텍스트 업데이트
+            blackScoreDisplay.innerText = scores.black;
+            whiteScoreDisplay.innerText = scores.white;
+
+            // 점수 획득 시 스케일(크기) 및 색상 강조 효과 처리
+            if (lastScorerTeam === 'black') {
+                blackScoreDisplay.classList.remove('text-neutral-200');
+                blackScoreDisplay.classList.add('text-[#D4AF37]', 'scale-105');
+                setTimeout(() => {
+                    blackScoreDisplay.classList.add('text-neutral-200');
+                    blackScoreDisplay.classList.remove('text-[#D4AF37]', 'scale-105');
+                }, 500);
+            } else if (lastScorerTeam === 'white') {
+                whiteScoreDisplay.classList.remove('text-neutral-800');
+                whiteScoreDisplay.classList.add('text-[#D4AF37]', 'scale-105');
+                setTimeout(() => {
+                    whiteScoreDisplay.classList.add('text-neutral-800');
+                    whiteScoreDisplay.classList.remove('text-[#D4AF37]', 'scale-105');
+                }, 500);
+            }
+
+            // 우세 상황 텍스트 업데이트
+            if (scores.black > scores.white) {
+                statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">흑팀 우세 (黑 優勢)</span>`;
+            } else if (scores.white > scores.black) {
+                statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">백팀 우세 (白 優勢)</span>`;
+            } else {
+                statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">무승부 (無勝負)</span>`;
+            }
+
+            // 줄다리기(게이지 & 별) 업데이트
+            const totalScore = scores.black + scores.white;
+            const blackPercentage = totalScore === 0 ? 50 : (scores.black / totalScore) * 100;
+            
+            blackGauge.style.width = `${blackPercentage}%`;
+            whiteGauge.style.width = `${100 - blackPercentage}%`;
+            starIndicator.style.left = `${blackPercentage}%`;
+        }
+
+        // 점수 증감 메인 함수
+        function handleScore(team, amount) {
+            scores[team] = Math.max(0, scores[team] + amount); // 0점 밑으로 내려가지 않음
+            
+            if (amount > 0) {
+                createParticles(team);
+                updateUI(team); // 득점한 팀에 강조 효과 전달
+            } else {
+                updateUI();
+            }
+        }
+
+        // 직접 입력 점수 적용
+        function applyCustomScore(team, isAdd) {
+            const inputElement = team === 'black' ? blackCustomInput : whiteCustomInput;
+            const val = parseInt(inputElement.value, 10);
+            
+            if (!isNaN(val) && val > 0) {
+                handleScore(team, isAdd ? val : -val);
+                inputElement.value = ''; // 적용 후 칸 비우기
+            }
+        }
+
+        // 직접 입력 엔터키 이벤트
+        function handleCustomInputEnter(event, team) {
+            if (event.key === 'Enter') {
+                applyCustomScore(team, true); // 엔터 치면 기본적으로 더하기
+            }
+        }
+
+        // 초기화
+        function resetScores() {
+            if(window.confirm('모든 기록을 초기화하시겠습니까?')) {
+                scores = { black: 0, white: 0 };
+                particles = [];
+                blackCustomInput.value = '';
+                whiteCustomInput.value = '';
+                updateUI();
+            }
+        }
+
+    </script>
+</body>
+</html>
