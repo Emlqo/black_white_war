@@ -82,11 +82,10 @@
 
                 <!-- 직접 입력 및 컨트롤 패널 -->
                 <div class="w-full bg-black/60 p-6 border border-neutral-800 rounded-lg backdrop-blur-sm">
-                    <!-- 빠른 추가 버튼 -->
+                    <!-- 빠른 추가 버튼 (단위 수정: 10점, 100점) -->
                     <div class="flex gap-2 w-full mb-6">
-                        <button onclick="handleScore('black', 1)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">1점</button>
-                        <button onclick="handleScore('black', 5)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">5점</button>
-                        <button onclick="handleScore('black', 10)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">10점</button>
+                        <button onclick="handleScore('black', 10)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">10점</button>
+                        <button onclick="handleScore('black', 100)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">100점</button>
                     </div>
 
                     <!-- 직접 입력 영역 -->
@@ -123,11 +122,10 @@
 
                 <!-- 직접 입력 및 컨트롤 패널 -->
                 <div class="w-full bg-white/60 p-6 border border-neutral-300 rounded-lg backdrop-blur-sm">
-                    <!-- 빠른 추가 버튼 -->
+                    <!-- 빠른 추가 버튼 (단위 수정: 10점, 100점) -->
                     <div class="flex gap-2 w-full mb-6">
-                        <button onclick="handleScore('white', 1)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">1점</button>
-                        <button onclick="handleScore('white', 5)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">5점</button>
-                        <button onclick="handleScore('white', 10)" class="flex-1 py-3 font-medium text-lg transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">10점</button>
+                        <button onclick="handleScore('white', 10)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">10점</button>
+                        <button onclick="handleScore('white', 100)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">100점</button>
                     </div>
 
                     <!-- 직접 입력 영역 -->
@@ -146,7 +144,7 @@
         </div>
 
         <!-- ==================== 하단 동양풍 상태바 및 줄다리기 게이지 ==================== -->
-        <!-- 기존: bottom-0 -> 수정: bottom-8 -->
+        <!-- 위치를 더 높임: bottom-20 -->
         <div class="absolute bottom-12 left-0 w-full z-30 flex flex-col items-center">
             
             <!-- 리셋 버튼 (게이지 바 위쪽으로 이동) -->
@@ -165,7 +163,6 @@
                 <!-- 좌우로 움직이는 빛나는 별 -->
                 <div id="starIndicator" class="absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-in-out z-10" style="left: 50%;">
                     <div class="bg-black p-1.5 rounded-full border-2 border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,1)]">
-                        <!-- Lucide 별 아이콘은 fill 처리가 복잡하므로 SVG 직접 삽입 -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     </div>
                 </div>
@@ -174,7 +171,7 @@
 
     </div>
 
-    <!-- 스크립트 로직 (기존 React 로직을 Vanilla JS로 완벽히 포팅) -->
+    <!-- 스크립트 로직 -->
     <script>
         // Lucide 아이콘 초기화
         lucide.createIcons();
@@ -254,13 +251,11 @@
         }
         animate(); // 애니메이션 시작
 
-        // 화면 UI 업데이트 함수 (React의 렌더링 역할)
+        // 화면 UI 업데이트 함수
         function updateUI(lastScorerTeam = null) {
-            // 점수 텍스트 업데이트
             blackScoreDisplay.innerText = scores.black;
             whiteScoreDisplay.innerText = scores.white;
 
-            // 점수 획득 시 스케일(크기) 및 색상 강조 효과 처리
             if (lastScorerTeam === 'black') {
                 blackScoreDisplay.classList.remove('text-neutral-200');
                 blackScoreDisplay.classList.add('text-[#D4AF37]', 'scale-105');
@@ -277,7 +272,6 @@
                 }, 500);
             }
 
-            // 우세 상황 텍스트 업데이트
             if (scores.black > scores.white) {
                 statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">흑팀 우세 (黑 優勢)</span>`;
             } else if (scores.white > scores.black) {
@@ -286,7 +280,6 @@
                 statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">무승부 (無勝負)</span>`;
             }
 
-            // 줄다리기(게이지 & 별) 업데이트
             const totalScore = scores.black + scores.white;
             const blackPercentage = totalScore === 0 ? 50 : (scores.black / totalScore) * 100;
             
@@ -295,37 +288,31 @@
             starIndicator.style.left = `${blackPercentage}%`;
         }
 
-        // 점수 증감 메인 함수
         function handleScore(team, amount) {
-            scores[team] = Math.max(0, scores[team] + amount); // 0점 밑으로 내려가지 않음
-            
+            scores[team] = Math.max(0, scores[team] + amount);
             if (amount > 0) {
                 createParticles(team);
-                updateUI(team); // 득점한 팀에 강조 효과 전달
+                updateUI(team);
             } else {
                 updateUI();
             }
         }
 
-        // 직접 입력 점수 적용
         function applyCustomScore(team, isAdd) {
             const inputElement = team === 'black' ? blackCustomInput : whiteCustomInput;
             const val = parseInt(inputElement.value, 10);
-            
             if (!isNaN(val) && val > 0) {
                 handleScore(team, isAdd ? val : -val);
-                inputElement.value = ''; // 적용 후 칸 비우기
+                inputElement.value = '';
             }
         }
 
-        // 직접 입력 엔터키 이벤트
         function handleCustomInputEnter(event, team) {
             if (event.key === 'Enter') {
-                applyCustomScore(team, true); // 엔터 치면 기본적으로 더하기
+                applyCustomScore(team, true);
             }
         }
 
-        // 초기화
         function resetScores() {
             if(window.confirm('모든 기록을 초기화하시겠습니까?')) {
                 scores = { black: 0, white: 0 };
@@ -335,7 +322,6 @@
                 updateUI();
             }
         }
-
     </script>
 </body>
 </html>
