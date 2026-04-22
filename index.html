@@ -162,8 +162,34 @@
         let animationFrameId;
 
         // 효과음 설정
-        const cheerSound = new Audio('https://actions.google.com/sounds/v1/crowd/crowd_cheer.ogg');
-        const pointSound = new Audio('https://www.soundjay.com/button/sounds/button-3.mp3');
+        // 환호성: 더 안정적인 공용 리소스 URL로 교체
+        const cheerSound = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
+        
+        // Web Audio API 설정 (브라우저 직접 합성음 생성을 위함)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        // 합성음(딩~) 재생 함수 - 외부 파일 없이 작동하여 가장 안정적임
+        function playDingSound() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+            oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
+
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        }
 
         const canvas = document.getElementById('particleCanvas');
         const ctx = canvas.getContext('2d');
@@ -230,12 +256,15 @@
 
         function playScoreSound(amount) {
             if (amount >= 100) {
+                // 100점 이상은 환호성 (파일 재생)
                 cheerSound.currentTime = 0;
-                cheerSound.play().catch(e => console.log("Audio play failed:", e));
+                cheerSound.play().catch(e => {
+                    console.log("Cheer audio blocked, trying synth instead.");
+                    playDingSound(); // 오디오 파일 실패시 대안으로 합성음 재생
+                });
             } else if (amount > 0) {
-                pointSound.currentTime = 0;
-                pointSound.volume = 0.5;
-                pointSound.play().catch(e => console.log("Audio play failed:", e));
+                // 10점 등은 합성음 (파일 없이 브라우저 생성)
+                playDingSound();
             }
         }
 
@@ -275,6 +304,9 @@
         }
 
         function handleScore(team, amount) {
+            // 브라우저 오디오 컨텍스트 활성화 (사용자 클릭 시점에 맞춰)
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
             scores[team] = Math.max(0, scores[team] + amount);
             if (amount > 0) {
                 createParticles(team);
