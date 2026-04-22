@@ -161,10 +161,11 @@
         let particles = [];
         let animationFrameId;
 
-        // Web Audio API 설정
-        // 외부 링크(mp3/ogg)가 차단되는 환경 문제를 완전히 해결하기 위해 브라우저에서 직접 소리를 합성합니다.
-        let audioCtx = null;
+        // 로컬에 업로드된 오디오 파일 사용
+        const cheerAudio = new Audio('./박수소리.mp3');
 
+        // 10점 획득 시: 경쾌한 전자음 합성 (10점은 기존대로 심플한 알림음 유지)
+        let audioCtx = null;
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -174,7 +175,6 @@
             }
         }
 
-        // 10점 획득 시: 경쾌한 전자음 합성
         function playDingSound() {
             initAudio();
             const osc = audioCtx.createOscillator();
@@ -192,41 +192,6 @@
             
             osc.start();
             osc.stop(audioCtx.currentTime + 0.3);
-        }
-
-        // 100점 획득 시: 웅장한 환호성 및 박수 소리 합성 (White Noise + Bandpass Filter)
-        function playCheerSound() {
-            initAudio();
-            
-            const duration = 3.0;
-            const bufferSize = audioCtx.sampleRate * duration;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            
-            // 화이트 노이즈(관중 소리 유사 파형) 생성
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
-            }
-            
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            
-            // 필터링을 통해 관중의 환호/박수 소리처럼 부드럽게 튜닝
-            const bandpass = audioCtx.createBiquadFilter();
-            bandpass.type = 'bandpass';
-            bandpass.frequency.value = 800; // 관중 소리에 적합한 대역
-            bandpass.Q.value = 0.8;
-            
-            const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.5); // 소리가 점점 커짐 (Swell)
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration); // 자연스럽게 작아짐 (Fade out)
-            
-            noise.connect(bandpass);
-            bandpass.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            noise.start();
         }
 
         const canvas = document.getElementById('particleCanvas');
@@ -293,11 +258,14 @@
         animate();
 
         // 소리 재생 전담 함수
-        function playScoreSound(amount) {
-            if (amount >= 100) {
-                playCheerSound(); // 브라우저 합성 환호성
+        function playScoreSound(amount, isCustomAdd = false) {
+            if (amount >= 100 || isCustomAdd) {
+                // 100점 버튼을 누르거나, 더하기 버튼을 눌렀을 경우 로컬 파일 재생
+                cheerAudio.currentTime = 0;
+                cheerAudio.play().catch(e => console.error("Audio block:", e));
             } else if (amount > 0) {
-                playDingSound(); // 브라우저 합성 경쾌한 소리
+                // 10점 버튼일 때는 브라우저 합성 경쾌한 소리
+                playDingSound();
             }
         }
 
@@ -336,12 +304,12 @@
             starIndicator.style.left = `${blackPercentage}%`;
         }
 
-        function handleScore(team, amount) {
+        function handleScore(team, amount, isCustomAdd = false) {
             scores[team] = Math.max(0, scores[team] + amount);
             
             if (amount > 0) {
                 createParticles(team);
-                playScoreSound(amount); // 합성 소리 재생 호출
+                playScoreSound(amount, isCustomAdd); // 합성 소리 또는 박수소리.mp3 재생 호출
                 updateUI(team);
             } else {
                 updateUI();
@@ -352,7 +320,7 @@
             const inputElement = team === 'black' ? blackCustomInput : whiteCustomInput;
             const val = parseInt(inputElement.value, 10);
             if (!isNaN(val) && val > 0) {
-                handleScore(team, isAdd ? val : -val);
+                handleScore(team, isAdd ? val : -val, isAdd); // 더하기 일경우 true 플래그 전달
                 inputElement.value = '';
             }
         }
