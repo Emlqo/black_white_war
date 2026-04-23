@@ -3,220 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>풍양중 흑백교사전 - 개회식</title>
-    <!-- Tailwind CSS -->
+    <title>풍양중 흑백교사전</title>
+    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* 동양풍 및 고급스러운 폰트 스택 */
+        /* 동양풍 폰트 스택 적용 */
         body {
             font-family: "Batang", "Gungsuh", "Noto Serif KR", serif;
             margin: 0;
             overflow: hidden; /* 스크롤 방지 */
-            background-color: #000;
-        }
-
-        /* 텍스트 엠보싱 및 발광 효과 (사진 촬영 시 선명하게 보임) */
-        .title-glow {
-            text-shadow: 
-                0px 4px 15px rgba(0, 0, 0, 0.8),
-                0px 0px 40px rgba(212, 175, 55, 0.4),
-                0px 0px 2px rgba(255, 255, 255, 0.8);
-        }
-
-        .hanja-glow {
-            text-shadow: 0px 0px 20px rgba(212, 175, 55, 0.6);
-        }
-
-        /* 등장 애니메이션 */
-        @keyframes fadeInScale {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
+            user-select: none; /* 텍스트 선택 방지 */
         }
         
-        @keyframes fadeLine {
-            0% { height: 0; opacity: 0; }
-            100% { height: 100%; opacity: 0.5; }
+        /* 커스텀 스크롤바 숨기기 (숫자 입력창) */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            font-family: sans-serif; /* 입력창은 가독성을 위해 고딕 유지 */
         }
 
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-plate {
-            animation: fadeInScale 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            opacity: 0;
-        }
-
-        .animate-line {
-            animation: fadeLine 2s ease-out 1s forwards;
-            opacity: 0;
-        }
-
-        .animate-button {
-            animation: fadeIn 1.5s ease-out 2s forwards;
-            opacity: 0;
+        /* 텍스트 그림자 효과 (인라인 스타일 대신 클래스로 정의) */
+        .title-shadow {
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 0px 0px 4px rgba(255,255,255,0.4);
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-900 text-white">
 
-    <!-- 전체 래퍼 -->
-    <div class="relative w-full h-screen overflow-hidden flex cursor-default">
+    <div class="relative w-full h-screen overflow-hidden flex">
         
-        <!-- ================= 배경 영역: 흑과 백의 대립 ================= -->
-        <!-- 좌측 흑팀 배경 -->
-        <div class="w-1/2 h-full bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
-            <!-- 거대한 배경 한자 (우아하게 배치) -->
-            <div class="absolute text-[50vw] text-white opacity-[0.03] leading-none select-none font-bold transform -translate-x-12">
-                黑
+        <!-- 백그라운드 파티클용 캔버스 -->
+        <canvas id="particleCanvas" class="absolute inset-0 pointer-events-none z-20"></canvas>
+
+        <!-- 중앙 상단 타이틀 영역 -->
+        <div class="absolute top-6 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center w-full">
+            <h1 class="text-4xl md:text-6xl text-[#D4AF37] tracking-[0.2em] font-bold title-shadow">
+                풍양중 흑백교사전
+            </h1>
+            <div class="mt-4 flex items-center gap-6">
+                <div class="w-20 h-[2px] bg-gradient-to-r from-transparent to-[#D4AF37]"></div>
+                <div class="text-2xl md:text-3xl text-[#D4AF37] tracking-[0.5em] font-medium drop-shadow-lg">
+                    黑白敎師戰
+                </div>
+                <div class="w-20 h-[2px] bg-gradient-to-l from-transparent to-[#D4AF37]"></div>
             </div>
-            <!-- 빛 번짐 효과 -->
-            <div class="absolute w-full h-full bg-[radial-gradient(circle_at_center,_rgba(212,175,55,0.05)_0%,_transparent_70%)]"></div>
+
+            <!-- 현재 우세 팀 중앙 강조 표시 -->
+            <div class="mt-6 px-8 py-2 bg-black/40 backdrop-blur-md rounded-full border border-[#D4AF37]/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                <span class="text-xl md:text-2xl font-bold tracking-widest text-white drop-shadow-md" id="statusText">
+                    <span class="text-neutral-300">현재 상황: </span>
+                    <span class="text-[#D4AF37]">무승부 (無勝負)</span>
+                </span>
+            </div>
         </div>
 
-        <!-- 우측 백팀 배경 -->
-        <div class="w-1/2 h-full bg-gradient-to-tl from-[#e0e0e0] to-[#ffffff] relative overflow-hidden flex items-center justify-center shadow-[-30px_0_50px_rgba(0,0,0,0.3)] z-0">
-            <!-- 거대한 배경 한자 -->
-            <div class="absolute text-[50vw] text-black opacity-[0.03] leading-none select-none font-bold transform translate-x-12">
-                白
+        <!-- ==================== 흑팀 영역 (수묵/Onyx Black) ==================== -->
+        <div class="w-1/2 h-full bg-[#111111] flex flex-col items-center justify-center relative transition-all duration-700 overflow-hidden">
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 opacity-10">
+                <span class="text-[40vw] text-white leading-none">黑</span>
+            </div>
+            
+            <div class="z-10 flex flex-col items-center w-full max-w-sm px-8 mt-10">
+                <div class="text-2xl tracking-[0.5em] mb-4 text-[#D4AF37] font-bold">
+                    흑 팀
+                </div>
+                <div id="blackScoreDisplay" class="text-[8rem] md:text-[12rem] font-bold leading-none transition-all duration-500 mb-8 text-neutral-200">
+                    0
+                </div>
+
+                <div class="w-full bg-black/60 p-6 border border-neutral-800 rounded-lg backdrop-blur-sm">
+                    <div class="flex gap-2 w-full mb-6">
+                        <button onclick="handleScore('black', 10)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">10점</button>
+                        <button onclick="handleScore('black', 100)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-300 border-neutral-700 bg-neutral-900/50 hover:bg-neutral-800 hover:text-white hover:border-[#D4AF37]">100점</button>
+                    </div>
+
+                    <div class="flex flex-col gap-3 w-full">
+                        <div class="flex items-center gap-2 border-b-2 border-neutral-700 pb-2">
+                            <span class="text-neutral-500 whitespace-nowrap text-sm">직접입력</span>
+                            <input type="number" min="1" id="blackCustomInput" placeholder="점수" class="w-full bg-transparent text-2xl text-center text-[#D4AF37] outline-none placeholder-neutral-800 font-sans" onkeydown="handleCustomInputEnter(event, 'black')">
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <button onclick="applyCustomScore('black', true)" class="flex-1 py-3 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/50 hover:bg-[#D4AF37]/40 transition-colors rounded text-lg tracking-widest">더하기</button>
+                            <button onclick="applyCustomScore('black', false)" class="flex-1 py-3 text-neutral-400 border border-neutral-700 hover:border-neutral-500 hover:text-neutral-200 transition-colors rounded text-lg tracking-widest">빼기</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 중앙 황금 경계선 -->
-        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-[2px] h-full bg-gradient-to-b from-transparent via-[#D4AF37] to-transparent z-10 animate-line"></div>
-
-        <!-- ================= 파티클 효과 (캔버스) ================= -->
-        <canvas id="bgCanvas" class="absolute inset-0 z-20 pointer-events-none"></canvas>
-
-        <!-- ================= 중앙 명패 (사진 촬영용 메인 포커스) ================= -->
-        <div class="absolute inset-0 z-30 flex items-center justify-center px-4 pointer-events-none">
-            <!-- 반투명 블랙/골드 글래스모피즘 플레이트 -->
-            <div class="bg-black/60 backdrop-blur-xl border border-[#D4AF37]/30 px-12 py-16 md:px-24 md:py-20 rounded-3xl shadow-[0_20px_70px_rgba(0,0,0,0.7),_inset_0_0_30px_rgba(212,175,55,0.1)] text-center animate-plate pointer-events-auto">
-                
-                <!-- 상단 연도 및 행사명 -->
-                <div class="flex items-center justify-center gap-4 mb-8">
-                    <div class="h-[1px] w-12 md:w-20 bg-[#D4AF37]/50"></div>
-                    <p class="text-[#D4AF37] tracking-[0.5em] md:tracking-[0.8em] text-sm md:text-xl uppercase font-light">
-                        2026 Pungyang Teachers' Match
-                    </p>
-                    <div class="h-[1px] w-12 md:w-20 bg-[#D4AF37]/50"></div>
+        <!-- ==================== 백팀 영역 (한지/Pearl White) ==================== -->
+        <div class="w-1/2 h-full bg-[#F5F5F0] flex flex-col items-center justify-center relative transition-all duration-700 border-l-2 border-neutral-300 shadow-[-20px_0_40px_rgba(0,0,0,0.1)] overflow-hidden">
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 opacity-5">
+                <span class="text-[40vw] text-black leading-none">白</span>
+            </div>
+            
+            <div class="z-10 flex flex-col items-center w-full max-w-sm px-8 mt-10">
+                <div class="text-2xl tracking-[0.5em] mb-4 text-[#AA8000] font-bold">
+                    백 팀
+                </div>
+                <div id="whiteScoreDisplay" class="text-[8rem] md:text-[12rem] font-bold leading-none transition-all duration-500 mb-8 text-neutral-800">
+                    0
                 </div>
 
-                <!-- 메인 한글 타이틀 (가장 크게) -->
-                <h1 class="text-6xl md:text-8xl lg:text-[9rem] font-bold text-transparent bg-clip-text bg-gradient-to-b from-white via-[#f0f0f0] to-[#999999] tracking-[0.1em] title-glow leading-tight mb-4">
-                    풍양중 흑백교사전
-                </h1>
+                <div class="w-full bg-white/60 p-6 border border-neutral-300 rounded-lg backdrop-blur-sm">
+                    <div class="flex gap-2 w-full mb-6">
+                        <button onclick="handleScore('white', 10)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">10점</button>
+                        <button onclick="handleScore('white', 100)" class="flex-1 py-4 font-medium text-xl transition-all duration-300 rounded flex items-center justify-center border tracking-widest text-neutral-600 border-neutral-300 bg-white/50 hover:bg-neutral-100 hover:text-black hover:border-[#AA8000]">100점</button>
+                    </div>
 
-                <!-- 서브 한자 타이틀 -->
-                <div class="flex items-center justify-center gap-8 mt-12">
-                    <div class="h-[2px] w-20 md:w-32 bg-gradient-to-r from-transparent to-[#D4AF37]"></div>
-                    <span class="text-4xl md:text-5xl lg:text-6xl text-[#D4AF37] tracking-[0.4em] hanja-glow font-bold">
-                        黑白敎師戰
-                    </span>
-                    <div class="h-[2px] w-20 md:w-32 bg-gradient-to-l from-transparent to-[#D4AF37]"></div>
+                    <div class="flex flex-col gap-3 w-full">
+                        <div class="flex items-center gap-2 border-b-2 border-neutral-300 pb-2">
+                            <span class="text-neutral-400 whitespace-nowrap text-sm">직접입력</span>
+                            <input type="number" min="1" id="whiteCustomInput" placeholder="점수" class="w-full bg-transparent text-2xl text-center text-[#AA8000] outline-none placeholder-neutral-200 font-sans" onkeydown="handleCustomInputEnter(event, 'white')">
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <button onclick="applyCustomScore('white', true)" class="flex-1 py-3 bg-[#AA8000]/10 text-[#AA8000] border border-[#AA8000]/40 hover:bg-[#AA8000]/20 transition-colors rounded text-lg tracking-widest">더하기</button>
+                            <button onclick="applyCustomScore('white', false)" class="flex-1 py-3 text-neutral-500 border border-neutral-300 hover:border-neutral-400 hover:text-neutral-700 transition-colors rounded text-lg tracking-widest">빼기</button>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- 시작하기 버튼 -->
-                <div class="mt-16 animate-button">
-                    <a href="index.html" class="group relative inline-flex items-center justify-center px-10 py-4 overflow-hidden rounded-full border border-[#D4AF37]/50 hover:border-[#D4AF37] transition-all duration-500 bg-black/40 hover:bg-[#D4AF37]/10 shadow-[0_0_15px_rgba(212,175,55,0.1)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] cursor-pointer no-underline">
-                        <span class="relative text-[#D4AF37] font-medium tracking-[0.3em] text-lg md:text-2xl group-hover:text-white transition-colors duration-500 flex items-center gap-4">
-                            대결 시작하기
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transform group-hover:translate-x-2 transition-transform duration-500"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                        </span>
-                    </a>
+        <!-- ==================== 하단 동양풍 상태바 및 줄다리기 게이지 ==================== -->
+        <div class="absolute bottom-20 left-0 w-full z-30 flex flex-col items-center">
+            <div class="w-full flex justify-end px-8 pb-4">
+                <button onclick="resetScores()" class="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-sm rounded-lg border border-neutral-700 text-neutral-400 hover:text-[#D4AF37] hover:border-[#D4AF37] transition-all text-sm tracking-widest">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    기록 초기화
+                </button>
+            </div>
+
+            <div class="relative w-full h-4 flex opacity-100 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] border-t-2 border-b-2 border-[#D4AF37]/80 bg-neutral-400">
+                <div id="blackGauge" class="h-full bg-neutral-800 transition-all duration-700 ease-in-out" style="width: 50%;"></div>
+                <div id="whiteGauge" class="h-full bg-[#FAFAFA] transition-all duration-700 ease-in-out" style="width: 50%;"></div>
+                <div id="starIndicator" class="absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-in-out z-10" style="left: 50%;">
+                    <div class="bg-black p-1.5 rounded-full border-2 border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,1)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
                 </div>
-
             </div>
         </div>
 
     </div>
 
-    <!-- 스크립트: 우아한 금빛 파티클 애니메이션 -->
+    <!-- 스크립트 로직 -->
     <script>
-        const canvas = document.getElementById('bgCanvas');
-        const ctx = canvas.getContext('2d');
+        lucide.createIcons();
 
-        let particlesArray = [];
+        let scores = { black: 0, white: 0 };
+        let particles = [];
         let animationFrameId;
 
-        // 캔버스 크기 맞춤
+        // 로컬에 업로드된 오디오 파일 사용
+        const cheerAudio = new Audio('./박수소리.mp3');
+
+        // 10점 획득 시: 경쾌한 전자음 합성 (10점은 기존대로 심플한 알림음 유지)
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playDingSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5 note
+            osc.frequency.exponentialRampToValueAtTime(493.88, audioCtx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        const blackScoreDisplay = document.getElementById('blackScoreDisplay');
+        const whiteScoreDisplay = document.getElementById('whiteScoreDisplay');
+        const blackCustomInput = document.getElementById('blackCustomInput');
+        const whiteCustomInput = document.getElementById('whiteCustomInput');
+        const statusText = document.getElementById('statusText');
+        const blackGauge = document.getElementById('blackGauge');
+        const whiteGauge = document.getElementById('whiteGauge');
+        const starIndicator = document.getElementById('starIndicator');
+
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            initParticles();
         }
         window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-        // 파티클 객체 정의
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2.5 + 0.5; // 미세한 금가루 크기
-                // 천천히 위로 상승하며 좌우로 흔들림
-                this.speedY = (Math.random() * 0.5) + 0.2; 
-                this.speedX = (Math.random() * 0.4) - 0.2;
-                
-                // 빛나는 금색 계열
-                const colors = ['#D4AF37', '#F3E5AB', '#AA8000', 'rgba(255,255,255,0.8)'];
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-                
-                // 반짝임 효과용
-                this.alpha = Math.random();
-                this.alphaChange = (Math.random() * 0.02) - 0.01;
-            }
+        function createParticles(team) {
+            const originX = team === 'black' ? canvas.width * 0.25 : canvas.width * 0.75;
+            const originY = canvas.height * 0.6;
+            const colors = team === 'black' 
+                ? ['#D4AF37', '#AA8000', '#222222', '#000000']
+                : ['#D4AF37', '#AA8000', '#FFFFFF', '#F0F0F0'];
 
-            update() {
-                this.y -= this.speedY;
-                this.x += this.speedX;
-
-                // 화면 위로 벗어나면 아래에서 재설정
-                if (this.y < 0) {
-                    this.y = canvas.height;
-                    this.x = Math.random() * canvas.width;
-                }
-
-                // 반짝임 (투명도 변화)
-                this.alpha += this.alphaChange;
-                if (this.alpha <= 0.1 || this.alpha >= 0.9) {
-                    this.alphaChange = -this.alphaChange;
-                }
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.alpha;
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: originX + (Math.random() - 0.5) * 100,
+                    y: originY + (Math.random() - 0.5) * 50,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() * -6) - 2,
+                    radius: Math.random() * 3 + 1,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1,
+                    decay: Math.random() * 0.015 + 0.005
+                });
             }
         }
 
-        // 파티클 초기화
-        function initParticles() {
-            particlesArray = [];
-            // 화면 크기에 비례하여 파티클 개수 조절 (은은하게 유지)
-            const numberOfParticles = (canvas.width * canvas.height) / 15000;
-            for (let i = 0; i < numberOfParticles; i++) {
-                particlesArray.push(new Particle());
-            }
-        }
-
-        // 애니메이션 루프
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < particlesArray.length; i++) {
-                particlesArray[i].update();
-                particlesArray[i].draw();
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+                p.life -= p.decay;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life * 0.8;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
             }
             animationFrameId = requestAnimationFrame(animate);
         }
-
-        // 페이지 로드 시 실행
-        resizeCanvas();
         animate();
+
+        // 소리 재생 전담 함수
+        function playScoreSound(amount, isCustomAdd = false) {
+            if (amount >= 100 || isCustomAdd) {
+                // 100점 버튼을 누르거나, 더하기 버튼을 눌렀을 경우 로컬 파일 재생
+                cheerAudio.currentTime = 0;
+                cheerAudio.play().catch(e => console.error("Audio block:", e));
+            } else if (amount > 0) {
+                // 10점 버튼일 때는 브라우저 합성 경쾌한 소리
+                playDingSound();
+            }
+        }
+
+        function updateUI(lastScorerTeam = null) {
+            blackScoreDisplay.innerText = scores.black;
+            whiteScoreDisplay.innerText = scores.white;
+
+            if (lastScorerTeam === 'black') {
+                blackScoreDisplay.classList.remove('text-neutral-200');
+                blackScoreDisplay.classList.add('text-[#D4AF37]', 'scale-105');
+                setTimeout(() => {
+                    blackScoreDisplay.classList.add('text-neutral-200');
+                    blackScoreDisplay.classList.remove('text-[#D4AF37]', 'scale-105');
+                }, 500);
+            } else if (lastScorerTeam === 'white') {
+                whiteScoreDisplay.classList.remove('text-neutral-800');
+                whiteScoreDisplay.classList.add('text-[#D4AF37]', 'scale-105');
+                setTimeout(() => {
+                    whiteScoreDisplay.classList.add('text-neutral-800');
+                    whiteScoreDisplay.classList.remove('text-[#D4AF37]', 'scale-105');
+                }, 500);
+            }
+
+            if (scores.black > scores.white) {
+                statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">흑팀 우세 (黑 優勢)</span>`;
+            } else if (scores.white > scores.black) {
+                statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">백팀 우세 (白 優勢)</span>`;
+            } else {
+                statusText.innerHTML = `<span class="text-neutral-300">현재 상황: </span><span class="text-[#D4AF37]">무승부 (無勝負)</span>`;
+            }
+
+            const totalScore = scores.black + scores.white;
+            const blackPercentage = totalScore === 0 ? 50 : (scores.black / totalScore) * 100;
+            blackGauge.style.width = `${blackPercentage}%`;
+            whiteGauge.style.width = `${100 - blackPercentage}%`;
+            starIndicator.style.left = `${blackPercentage}%`;
+        }
+
+        function handleScore(team, amount, isCustomAdd = false) {
+            scores[team] = Math.max(0, scores[team] + amount);
+            
+            if (amount > 0) {
+                createParticles(team);
+                playScoreSound(amount, isCustomAdd); // 합성 소리 또는 박수소리.mp3 재생 호출
+                updateUI(team);
+            } else {
+                updateUI();
+            }
+        }
+
+        function applyCustomScore(team, isAdd) {
+            const inputElement = team === 'black' ? blackCustomInput : whiteCustomInput;
+            const val = parseInt(inputElement.value, 10);
+            if (!isNaN(val) && val > 0) {
+                handleScore(team, isAdd ? val : -val, isAdd); // 더하기 일경우 true 플래그 전달
+                inputElement.value = '';
+            }
+        }
+
+        function handleCustomInputEnter(event, team) {
+            if (event.key === 'Enter') {
+                applyCustomScore(team, true);
+            }
+        }
+
+        function resetScores() {
+            if(window.confirm('모든 기록을 초기화하시겠습니까?')) {
+                scores = { black: 0, white: 0 };
+                particles = [];
+                blackCustomInput.value = '';
+                whiteCustomInput.value = '';
+                updateUI();
+            }
+        }
     </script>
 </body>
 </html>
